@@ -1,0 +1,35 @@
+
+# vyper pseudocode:
+#@external
+#def foo(a int256) -> bytes[64]:
+#    b: bytes32 = sha3(convert(a, bytes32))
+#    ret: bytes[64] = convert(b, bytes[32])
+#    b = sha3(b)
+#    ret = concat(ret, convert(b, bytes[32]))
+#    return b
+
+# ideal generated code:
+// _foo(int256) jumpdest
+// calldatacopy 0 4 32 # copy 1st word of calldata to memory[0]
+// sha3 0 32           # sha3 in stack
+// mstore 32 pass      # copy to memory since we are returning it
+// sha3 32 32          # sha3 from the memory we just copied to
+// mstore 64 pass      # put it in the place it's expected
+// mstore 0 64         # write length to beginning of memory buffer
+// return 0 96         # return
+
+# three types in vyperIR, word, bytestring[n] and tuple
+# three locations, stackmem (unified stack and memory)
+# storage and calldata.
+foo() -> %bytestring[64]:
+    # calldata starting at ofst 4 (length implied by type)
+    a1 %word = EVM/calldata@4
+    # don't deal with stack or memory operations until low level
+    # for now just binary/unary ops and assign
+    b1 %word = EVM/sha3 a1 32
+    # mutation not allowed.
+    b2 %word = EVM/sha3 b1 32
+    ret %bytestring[64] = bytestring[64](64, b1, b2)
+    # differentiate between private and public return since
+    # they have different calling conventions
+    public_return ret

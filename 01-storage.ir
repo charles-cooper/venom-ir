@@ -1,0 +1,26 @@
+
+# vyper pseudocode:
+counter: uint256
+@external
+# increment counter by amount and return its new value
+def increment_counter(amount: uint256) -> uint256:
+    self.counter += amount
+    return self.counter
+
+# work backwards from ideal generated code
+// _increment_counter(uint256) jumpdest
+// sload 0        # grab self.counter
+// calldataload 4 # grab amount
+// add            # increment the counter.
+// dup1           # copy it so we have it in storage
+// sstore 0 pass   # write new counter to storage
+// mstore 0 pass  # write new counter to return buffer
+// return 0 32    # return
+
+increment_counter() -> uint256:
+    # calldata starting at ofst 4 (length implied by type)
+    amount %word = EVM/calldata@4
+    selfcounter %word = EVM/storage@0
+    newcounter %word = add amount selfcounter
+    EVM/sstore 0 newcounter
+    public_return newcounter
