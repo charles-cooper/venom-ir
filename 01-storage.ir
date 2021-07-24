@@ -11,9 +11,10 @@ def increment_counter(amount: uint256) -> uint256:
 // _increment_counter(uint256) jumpdest
 // sload 0        # grab self.counter
 // calldataload 4 # grab amount
+// hmm need to check overflow here
 // add            # increment the counter.
 // dup1           # copy it so we have it in storage
-// sstore 0 pass   # write new counter to storage
+// sstore 0 pass  # write new counter to storage
 // mstore 0 pass  # write new counter to return buffer
 // return 0 32    # return
 
@@ -22,5 +23,6 @@ increment_counter() -> uint256:
     amount %word = EVM/calldata@4
     selfcounter %word = EVM/storage@0
     newcounter %word = add amount selfcounter
+    assert(newcounter >= selfcounter)
     EVM/sstore 0 newcounter
     public_return newcounter
